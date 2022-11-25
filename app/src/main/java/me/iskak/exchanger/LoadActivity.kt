@@ -24,15 +24,16 @@ class LoadActivity : AppCompatActivity() {
                 startActivity(Intent(this@LoadActivity, MainActivity::class.java))
                 finish()
             } catch (e: Exception) {
-                val myDialogFragment = MyDialogFragment(this@LoadActivity)
-                val manager = supportFragmentManager
-                myDialogFragment.show(manager, null)
+                val alertDialog = AlertDialog(this)
+                alertDialog.show(supportFragmentManager, null)
             }
         }
     }
 }
 
 private fun fetchData() {
+    currencies.clear()
+
     val xml = DocumentBuilderFactory.newInstance()
         .newDocumentBuilder()
         .parse("https://www.cbr.ru/scripts/XML_daily.asp")
@@ -58,8 +59,7 @@ private fun fetchData() {
     }
 }
 
-class MyDialogFragment(private val loadActivity: LoadActivity) : DialogFragment() {
-
+class AlertDialog(private val loadActivity: LoadActivity) : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return activity?.let {
             val alert = AlertDialog.Builder(it).setMessage("Error occurred")
