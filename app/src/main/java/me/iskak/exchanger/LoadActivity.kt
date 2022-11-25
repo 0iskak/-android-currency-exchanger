@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
+import java.util.LinkedList
 import java.util.concurrent.Executors
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -32,12 +33,11 @@ class LoadActivity : AppCompatActivity() {
 }
 
 private fun fetchData() {
-    currencies.clear()
-
     val xml = DocumentBuilderFactory.newInstance()
         .newDocumentBuilder()
         .parse("https://www.cbr.ru/scripts/XML_daily.asp")
 
+    val currenciesArray = LinkedList<Currency>()
     val elements = xml.getElementsByTagName("Valute")
     for (i in 0 until elements.length) {
         val currency = Currency()
@@ -55,7 +55,21 @@ private fun fetchData() {
             }
         }
 
-        currencies[currency.code] = currency
+        currenciesArray.add(currency)
+    }
+
+
+    val rub = Currency()
+    rub.code = "RUB"
+    rub.name = "Российский рубль"
+    rub.value = 1.0
+    rub.nominal = 1
+    currenciesArray.add(rub)
+    currenciesArray.sortBy { it.code }
+
+    currencies.clear()
+    currenciesArray.forEach {
+        currencies[it.code] = it
     }
 }
 

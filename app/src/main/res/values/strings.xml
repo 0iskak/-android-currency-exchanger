@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Currency Exchanger</string>
     <string name="load_text">Fetching data</string>
+    <string name="main_switch">Switch</string>
 </resources>
