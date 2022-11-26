@@ -3,6 +3,9 @@ package me.iskak.exchanger
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.MotionEvent
+import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Spinner
@@ -12,7 +15,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var amounts: List<EditText>
     private lateinit var spinners: List<Spinner>
 
-    private var active: Int = 0
+    private var active = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,8 +33,21 @@ class MainActivity : AppCompatActivity() {
 
         spinners = listOf(R.id.spinner1, R.id.spinner2)
             .map { requireViewById<Spinner>(it) }
-        spinners.forEach {
-            setAdapter(it)
+        setDefaultAdapters()
+    }
+
+    private val defaultSelectListener = object : AdapterView.OnItemSelectedListener {
+        override fun onItemSelected(
+            parent: AdapterView<*>?,
+            view: View?,
+            position: Int,
+            id: Long
+        ) {
+            setDefaultAdapters()
+            textWatcher.afterTextChanged(amounts[active].text)
+        }
+
+        override fun onNothingSelected(parent: AdapterView<*>?) {
         }
     }
 
@@ -41,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
 
         override fun afterTextChanged(p0: Editable?) {
-            if (p0.isNullOrBlank()) {
+            if (p0.toString().isEmpty()) {
                 amounts.forEach {
                     it.text.clear()
                 }
@@ -52,7 +68,7 @@ class MainActivity : AppCompatActivity() {
             removeListeners()
 
             val currencies = spinners.map {
-                currencies[it.selectedItem]!!
+                currencies[it.selectedItem.toString().split(" ")[0]]!!
             }
 
             val currency = currencies[active]
@@ -61,8 +77,9 @@ class MainActivity : AppCompatActivity() {
                 if (index == active)
                     return@forEachIndexed
 
-                val calculated = (currency.value / currency.nominal) /
-                        (currencies[index].value / currencies[index].nominal)
+                val calculated = ((currency.value / currency.nominal) /
+                        (currencies[index].value / currencies[index].nominal)) *
+                        amounts[active].text.toString().toDouble()
 
                 amount.text.clear()
                 amount.text.append(String.format("%.4f", calculated).replace(",", "."))
@@ -84,17 +101,53 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setAdapter(spinner: Spinner) {
-        val adapter = ArrayAdapter(
-            spinner.context,
-            android.R.layout.simple_spinner_item,
-            currencies.keys.toList()
-        )
+    private fun setDefaultAdapters() {
+        spinners.forEach {
+            val adapter = ArrayAdapter(
+                it.context,
+                android.R.layout.simple_spinner_item,
+                currencies.keys.toList()
+            )
 
-        adapter.setDropDownViewResource(
-            android.R.layout.simple_spinner_dropdown_item
-        )
+            adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+            )
 
-        spinner.adapter = adapter
+            it.onItemSelectedListener = null
+            val selected = it.selectedItemPosition
+            it.adapter = adapter
+            it.setSelection(selected)
+            it.onItemSelectedListener = defaultSelectListener
+
+            it.setOnTouchListener { view, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    setLongAdapter()
+                }
+
+                view.performClick()
+            }
+        }
+    }
+
+    private fun setLongAdapter() {
+        spinners.forEach {
+            val adapter = ArrayAdapter(
+                it.context,
+                android.R.layout.simple_spinner_item,
+                currencies.map { entry ->
+                    "${entry.key} ${entry.value.name}"
+                }
+            )
+
+            adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+            )
+
+            it.onItemSelectedListener = null
+            val selected = it.selectedItemPosition
+            it.adapter = adapter
+            it.setSelection(selected)
+            it.onItemSelectedListener = defaultSelectListener
+        }
     }
 }
